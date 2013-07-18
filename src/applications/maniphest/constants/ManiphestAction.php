@@ -11,6 +11,8 @@ final class ManiphestAction extends ManiphestConstants {
   const ACTION_CLOSE       = 'close';
   const ACTION_UPDATE      = 'update';
   const ACTION_ASSIGN      = 'assign';
+  const ACTION_START_WORK  = 'start_work_on';
+  const ACTION_FINISH_WORK = 'finish_work_on';
 
   /* these actions are determined sufficiently by the transaction
      type and thus we use them here*/
@@ -42,6 +44,8 @@ final class ManiphestAction extends ManiphestConstants {
       self::ACTION_EDGE        => 'changed related objects of',
       self::ACTION_REOPEN      => 'reopened',
       self::ACTION_AUXILIARY   => 'updated an auxiliary field of',
+	  self::ACTION_START_WORK  => 'started work on',
+      self::ACTION_FINISH_WORK => 'finished work on',
     );
 
     return idx($map, $action, "brazenly {$action}'d");
@@ -70,6 +74,8 @@ final class ManiphestAction extends ManiphestConstants {
       self::ACTION_REOPEN      => 10,
       self::ACTION_CREATE      => 11,
       self::ACTION_CLOSE       => 12,
+      self::ACTION_START_WORK  => 13,
+      self::ACTION_FINISH_WORK => 14,
     );
 
     $strongest = null;

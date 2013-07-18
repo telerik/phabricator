@@ -22,30 +22,45 @@ final class ManiphestTaskQuery extends PhabricatorQuery {
 
   private $fullTextSearch   = '';
 
-  private $status           = 'status-any';
-  const STATUS_ANY          = 'status-any';
-  const STATUS_OPEN         = 'status-open';
-  const STATUS_CLOSED       = 'status-closed';
-  const STATUS_RESOLVED     = 'status-resolved';
-  const STATUS_WONTFIX      = 'status-wontfix';
-  const STATUS_INVALID      = 'status-invalid';
-  const STATUS_SPITE        = 'status-spite';
-  const STATUS_DUPLICATE    = 'status-duplicate';
+  private $taskType  = 'type-any';
+  const TYPE_ANY     = 'type-any';
+  const TYPE_TASK    = 'type-task';
+  const TYPE_BUG     = 'type-bug';
+  
+  private $status             = 'status-any';
+  const STATUS_ANY            = 'status-any';
+  const STATUS_OPEN           = 'status-open';
+  const STATUS_CLOSED         = 'status-closed';
+  const STATUS_OPEN_ONLY      = 'status-open-only';
+  const STATUS_IN_PROGRESS    = 'status-in-progress';
+  const STATUS_READY_FOR_TEST = 'status-ready-for-test';
+  const STATUS_RESOLVED       = 'status-resolved';
+  const STATUS_WONTFIX        = 'status-wontfix';
+  const STATUS_INVALID        = 'status-invalid';
+  const STATUS_SPITE          = 'status-spite';
+  const STATUS_DUPLICATE      = 'status-duplicate';
 
   private $priority         = null;
 
   private $minPriority      = null;
   private $maxPriority      = null;
+  
+  private $severity         = null;
 
+  private $minSeverity      = null;
+  private $maxSeverity      = null;
+  
   private $groupBy          = 'group-none';
   const GROUP_NONE          = 'group-none';
   const GROUP_PRIORITY      = 'group-priority';
+  const GROUP_SEVERITY      = 'group-severity';
   const GROUP_OWNER         = 'group-owner';
   const GROUP_STATUS        = 'group-status';
   const GROUP_PROJECT       = 'group-project';
 
   private $orderBy          = 'order-modified';
   const ORDER_PRIORITY      = 'order-priority';
+  const ORDER_SEVERITY      = 'order-severity';
   const ORDER_CREATED       = 'order-created';
   const ORDER_MODIFIED      = 'order-modified';
   const ORDER_TITLE         = 'order-title';
@@ -115,6 +130,11 @@ final class ManiphestTaskQuery extends PhabricatorQuery {
     return $this;
   }
 
+  public function withTaskType($value) {
+    $this->taskType = $value;
+    return $this;
+  }
+  
   public function withStatus($status) {
     $this->status = $status;
     return $this;
@@ -130,6 +150,18 @@ final class ManiphestTaskQuery extends PhabricatorQuery {
     $this->maxPriority = $max;
     return $this;
   }
+
+  public function withSeverity($severity) {
+    $this->severity = $severity;
+    return $this;
+  }
+
+  public function withSeveritiesBetween($min, $max) {
+    $this->minSeverity = $min;
+    $this->maxSeverity = $max;
+    return $this;
+  }
+  
 
   public function withSubscribers(array $subscribers) {
     $this->subscriberPHIDs = $subscribers;
@@ -203,8 +235,10 @@ final class ManiphestTaskQuery extends PhabricatorQuery {
     $where = array();
     $where[] = $this->buildTaskIDsWhereClause($conn);
     $where[] = $this->buildTaskPHIDsWhereClause($conn);
+    $where[] = $this->buildTaskTypeWhereClause($conn);
     $where[] = $this->buildStatusWhereClause($conn);
     $where[] = $this->buildPriorityWhereClause($conn);
+	$where[] = $this->buildSeverityWhereClause($conn);
     $where[] = $this->buildAuthorWhereClause($conn);
     $where[] = $this->buildOwnerWhereClause($conn);
     $where[] = $this->buildSubscriberWhereClause($conn);
@@ -317,26 +351,58 @@ final class ManiphestTaskQuery extends PhabricatorQuery {
       $this->taskPHIDs);
   }
 
+  private function buildTaskTypeWhereClause(AphrontDatabaseConnection $conn) {
+
+    static $map_ = array(
+      self::TYPE_TASK => ManiphestTaskType::TYPE_TASK,
+      self::TYPE_BUG  => ManiphestTaskType::TYPE_BUG,
+    );
+
+    switch ($this->taskType) {
+      case self::TYPE_ANY:
+        return null;
+      case self::TYPE_TASK:
+         return 'taskType = 0';
+      case self::TYPE_BUG:
+        return 'taskType = 1';
+      default:
+        $constant = idx($map_, $this->taskType);
+        if (!$constant) {
+          throw new Exception("Unknown task type query '{$this->taskType}'!");
+        }
+        return qsprintf(
+          $conn,
+          'taskType = %d',
+          $constant);
+    }
+  }
+  
   private function buildStatusWhereClause(AphrontDatabaseConnection $conn) {
 
     static $map = array(
-      self::STATUS_RESOLVED   => ManiphestTaskStatus::STATUS_CLOSED_RESOLVED,
-      self::STATUS_WONTFIX    => ManiphestTaskStatus::STATUS_CLOSED_WONTFIX,
-      self::STATUS_INVALID    => ManiphestTaskStatus::STATUS_CLOSED_INVALID,
-      self::STATUS_SPITE      => ManiphestTaskStatus::STATUS_CLOSED_SPITE,
-      self::STATUS_DUPLICATE  => ManiphestTaskStatus::STATUS_CLOSED_DUPLICATE,
+	  self::STATUS_OPEN_ONLY      => ManiphestTaskStatus::STATUS_OPEN,
+	  self::STATUS_IN_PROGRESS    => ManiphestTaskStatus::STATUS_OPEN_IN_PROGRESS,
+	  self::STATUS_READY_FOR_TEST => ManiphestTaskStatus::STATUS_OPEN_READY_FOR_TEST,
+      self::STATUS_RESOLVED       => ManiphestTaskStatus::STATUS_CLOSED_RESOLVED,
+      self::STATUS_WONTFIX        => ManiphestTaskStatus::STATUS_CLOSED_WONTFIX,
+      self::STATUS_INVALID        => ManiphestTaskStatus::STATUS_CLOSED_INVALID,
+      self::STATUS_SPITE          => ManiphestTaskStatus::STATUS_CLOSED_SPITE,
+      self::STATUS_DUPLICATE      => ManiphestTaskStatus::STATUS_CLOSED_DUPLICATE,
     );
 
     switch ($this->status) {
       case self::STATUS_ANY:
         return null;
       case self::STATUS_OPEN:
-        return 'status = 0';
+        return 'status IN (0, 6, 7)';
       case self::STATUS_CLOSED:
-        return 'status > 0';
+        return 'status > 0 AND status < 6';
       default:
-        $constant = idx($map, $this->status);
-        if (!$constant) {
+        // Ivo: This original code is not reliable - doesn't work if $constant value is zero
+		// $constant = idx($map, $this->status);
+        // if (!$constant) {
+		$constant = $map[$this->status];
+		if (!isset($constant)) {
           throw new Exception("Unknown status query '{$this->status}'!");
         }
         return qsprintf(
@@ -363,6 +429,23 @@ final class ManiphestTaskQuery extends PhabricatorQuery {
     return null;
   }
 
+  private function buildSeverityWhereClause(AphrontDatabaseConnection $conn) {
+    if ($this->severity !== null) {
+      return qsprintf(
+        $conn,
+        'severity = %d',
+        $this->severity);
+    } elseif ($this->minSeverity !== null && $this->maxSeverity !== null) {
+      return qsprintf(
+        $conn,
+        'severity >= %d AND severity <= %d',
+        $this->minSeverity,
+        $this->maxSeverity);
+    }
+
+    return null;
+  }
+  
   private function buildAuthorWhereClause(AphrontDatabaseConnection $conn) {
     if (!$this->authorPHIDs) {
       return null;
@@ -557,6 +640,9 @@ final class ManiphestTaskQuery extends PhabricatorQuery {
       case self::GROUP_PRIORITY:
         $order[] = 'priority';
         break;
+      case self::GROUP_SEVERITY:
+        $order[] = 'severity';
+        break;
       case self::GROUP_OWNER:
         $order[] = 'ownerOrdering';
         break;
@@ -575,6 +661,10 @@ final class ManiphestTaskQuery extends PhabricatorQuery {
       case self::ORDER_PRIORITY:
         $order[] = 'priority';
         $order[] = 'subpriority';
+        $order[] = 'dateModified';
+        break;
+      case self::ORDER_SEVERITY:
+        $order[] = 'severity';
         $order[] = 'dateModified';
         break;
       case self::ORDER_CREATED:

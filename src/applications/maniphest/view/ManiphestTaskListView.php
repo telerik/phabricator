@@ -55,8 +55,11 @@ final class ManiphestTaskListView extends ManiphestView {
 
     foreach ($this->tasks as $task) {
       $item = new PhabricatorObjectItemView();
-      $item->setObjectName('T'.$task->getID());
-      $item->setHeader($task->getTitle());
+      $item->setObjectName(sprintf('%s T%d (%s)',
+        ManiphestTaskType::getTaskTypeName($task->getTaskType()), $task->getID(),
+        ManiphestTaskSeverity::getTaskSeverityName($task->getSeverity())));
+		
+	  $item->setHeader($task->getTitle());
       $item->setHref('/T'.$task->getID());
 
       if ($task->getOwnerPHID()) {

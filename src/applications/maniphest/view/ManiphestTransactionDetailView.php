@@ -310,6 +310,11 @@ final class ManiphestTransactionDetailView extends ManiphestView {
     $new = $transaction->getNewValue();
     $old = $transaction->getOldValue();
     switch ($type) {
+      case ManiphestTransactionType::TYPE_TASK_TYPE:
+        $verb = 'TypeChanged';
+        $desc = 'changed the type from '.$this->renderString(ManiphestTaskType::getTaskTypeName($old)).
+                                   ' to '.$this->renderString(ManiphestTaskType::getTaskTypeName($new));
+        break;
       case ManiphestTransactionType::TYPE_TITLE:
         $verb = 'Retitled';
         $desc = 'changed the title from '.$this->renderString($old).
@@ -426,7 +431,17 @@ final class ManiphestTransactionDetailView extends ManiphestView {
         }
         break;
       case ManiphestTransactionType::TYPE_STATUS:
-        if ($new == ManiphestTaskStatus::STATUS_OPEN) {
+        if ($new == ManiphestTaskStatus::STATUS_OPEN_IN_PROGRESS) {
+            $verb = 'StartWork';
+            $desc = 'started work on this task';
+            $classes[] = 'started work on';
+		}
+		else if ($new == ManiphestTaskStatus::STATUS_OPEN_READY_FOR_TEST) {
+            $verb = 'FinishWork';
+            $desc = 'finished work on this task';
+            $classes[] = 'finished work on';
+		}
+		else if ($new == ManiphestTaskStatus::STATUS_OPEN) {
           if ($old) {
             $verb = 'Reopened';
             $desc = 'reopened this task';
@@ -471,6 +486,20 @@ final class ManiphestTransactionDetailView extends ManiphestView {
           $classes[] = 'unbreaknow';
         }
         break;
+      case ManiphestTransactionType::TYPE_SEVERITY:
+        $old_name = ManiphestTaskSeverity::getTaskSeverityName($old);
+        $new_name = ManiphestTaskSeverity::getTaskSeverityName($new);
+
+        if ($old > $new) {
+          $verb = 'Lowered Severity';
+          $desc = 'lowered the severity of this task from "'.$old_name.'" to '.
+                  '"'.$new_name.'"';
+        } else {
+          $verb = 'Raised Severity';
+          $desc = 'raised the severity of this task from "'.$old_name.'" to '.
+                  '"'.$new_name.'"';
+        }
+		break;
       case ManiphestTransactionType::TYPE_ATTACH:
         if ($this->preview) {
           $verb = 'Changed Attached';

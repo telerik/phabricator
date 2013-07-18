@@ -35,6 +35,10 @@ final class ManiphestTaskListController extends ManiphestController {
       $min_priority = $request->getInt('set_lpriority');
 
       $max_priority = $request->getInt('set_hpriority');
+	  
+      $min_severity = $request->getInt('set_lseverity');
+
+      $max_severity = $request->getInt('set_hseverity');
 
       $uri = $request->getRequestURI()
         ->alter('users',         $this->getArrToStrList('set_users'))
@@ -46,6 +50,8 @@ final class ManiphestTaskListController extends ManiphestController {
         ->alter('authors',       $this->getArrToStrList('set_authors'))
         ->alter('lpriority',     $min_priority)
         ->alter('hpriority',     $max_priority)
+        ->alter('lseverity',     $min_severity)
+        ->alter('hseverity',     $max_severity)
         ->alter('tasks',         $task_ids)
         ->alter('search',        $search_text);
 
@@ -114,10 +120,13 @@ final class ManiphestTaskListController extends ManiphestController {
       array());
     $low_priority   = $query->getParameter('lowPriority');
     $high_priority  = $query->getParameter('highPriority');
+    $low_severity   = $query->getParameter('lowSeverity');
+    $high_severity  = $query->getParameter('highSeverity');
 
     $page_size = $query->getParameter('limit');
     $page = $query->getParameter('offset');
 
+    $q_taskType = $query->getParameter('type');
     $q_status = $query->getParameter('status');
     $q_group  = $query->getParameter('group');
     $q_order  = $query->getParameter('order');
@@ -128,6 +137,9 @@ final class ManiphestTaskListController extends ManiphestController {
       ->setAction(
           $request->getRequestURI()
             ->alter('key', null)
+            ->alter(
+              $this->getTaskTypeRequestKey(),
+              $this->getTaskTypeRequestValue($q_taskType))
             ->alter(
               $this->getStatusRequestKey(),
               $this->getStatusRequestValue($q_status))
@@ -269,9 +281,34 @@ final class ManiphestTaskListController extends ManiphestController {
             ->setValue($priority)
             ->setOptions(ManiphestTaskPriority::getTaskPriorityMap()));
 
+      $severity = ManiphestTaskSeverity::getLowestSeverity();
+      if ($low_severity !== null) {
+        $severity = $low_severity;
+      }
+
+      $form->appendChild(
+          id(new AphrontFormSelectControl())
+            ->setLabel(pht('Min Severity'))
+            ->setName('set_lseverity')
+            ->setValue($severity)
+            ->setOptions(array_reverse(
+                ManiphestTaskSeverity::getTaskSeverityMap(), true)));
+
+      $severity = ManiphestTaskSeverity::getHighestSeverity();
+      if ($high_severity !== null) {
+        $severity = $high_severity;
+      }
+
+      $form->appendChild(
+          id(new AphrontFormSelectControl())
+            ->setLabel(pht('Max Severity'))
+            ->setName('set_hseverity')
+            ->setValue($severity)
+            ->setOptions(ManiphestTaskSeverity::getTaskSeverityMap()));
     }
 
     $form
+      ->appendChild($this->renderTaskTypeControl($q_taskType))
       ->appendChild($this->renderStatusControl($q_status))
       ->appendChild($this->renderGroupControl($q_group))
       ->appendChild($this->renderOrderControl($q_order));
@@ -460,6 +497,13 @@ final class ManiphestTaskListController extends ManiphestController {
     $high_priority = coalesce($high_priority,
       ManiphestTaskPriority::getHighestPriority());
 
+    $low_severity = $search_query->getParameter('lowSeverity');
+    $low_severity = coalesce($low_severity,
+        ManiphestTaskSeverity::getLowestSeverity());
+    $high_severity = $search_query->getParameter('highSeverity');
+    $high_severity = coalesce($high_severity,
+      ManiphestTaskSeverity::getHighestSeverity());
+	  
     $query = new ManiphestTaskQuery();
     $query->withTaskIDs($task_ids);
 
@@ -488,14 +532,28 @@ final class ManiphestTaskListController extends ManiphestController {
       $query->withAnyUserProjects($any_user_project_phids);
     }
 
-    $status = $search_query->getParameter('status', 'all');
-    if (!empty($status['open']) && !empty($status['closed'])) {
-      $query->withStatus(ManiphestTaskQuery::STATUS_ANY);
-    } else if (!empty($status['open'])) {
-      $query->withStatus(ManiphestTaskQuery::STATUS_OPEN);
+	$taskType = $search_query->getParameter('type', 'all');
+    if (!empty($taskType['task']) && !empty($taskType['bug'])) {
+      $query->withTaskType(ManiphestTaskQuery::TYPE_ANY);
+    } else if (!empty($taskType['task'])) {
+      $query->withTaskType(ManiphestTaskQuery::TYPE_TASK);
     } else {
-      $query->withStatus(ManiphestTaskQuery::STATUS_CLOSED);
+      $query->withTaskType(ManiphestTaskQuery::TYPE_BUG);
     }
+	
+    $status = $search_query->getParameter('status', 'all');
+    if (is_array($status)) {
+      if (!empty($status['open']) && !empty($status['closed'])) {
+        $query->withStatus(ManiphestTaskQuery::STATUS_ANY);
+      } else if (!empty($status['open'])) {
+        $query->withStatus(ManiphestTaskQuery::STATUS_OPEN);
+      } else {
+        $query->withStatus(ManiphestTaskQuery::STATUS_CLOSED);
+      }
+	}
+	else {
+      $query->withStatus($status);
+	}
 
     switch ($search_query->getParameter('view')) {
       case 'action':
@@ -523,6 +581,7 @@ final class ManiphestTaskListController extends ManiphestController {
         break;
       case 'custom':
         $query->withPrioritiesBetween($low_priority, $high_priority);
+        $query->withSeveritiesBetween($low_severity, $high_severity);
         break;
     }
 
@@ -530,6 +589,7 @@ final class ManiphestTaskListController extends ManiphestController {
 
     $order_map = array(
       'priority'  => ManiphestTaskQuery::ORDER_PRIORITY,
+      'severity'  => ManiphestTaskQuery::ORDER_SEVERITY,
       'created'   => ManiphestTaskQuery::ORDER_CREATED,
       'title'     => ManiphestTaskQuery::ORDER_TITLE,
     );
@@ -541,6 +601,7 @@ final class ManiphestTaskListController extends ManiphestController {
 
     $group_map = array(
       'priority'  => ManiphestTaskQuery::GROUP_PRIORITY,
+      'severity'  => ManiphestTaskQuery::GROUP_SEVERITY,
       'owner'     => ManiphestTaskQuery::GROUP_OWNER,
       'status'    => ManiphestTaskQuery::GROUP_STATUS,
       'project'   => ManiphestTaskQuery::GROUP_PROJECT,
@@ -596,6 +657,22 @@ final class ManiphestTaskListController extends ManiphestController {
         }
         foreach ($out as $pri => $tasks) {
           $out[$pri] = array_mergev($tasks);
+        }
+        $data = $out;
+
+        break;
+      case 'severity':
+        $data = mgroup($data, 'getSeverity');
+
+        // If we have invalid severities, they'll all map to "???". Merge
+        // arrays to prevent them from overwriting each other.
+
+        $out = array();
+        foreach ($data as $sev => $tasks) {
+          $out[ManiphestTaskSeverity::getTaskSeverityName($sev)][] = $tasks;
+        }
+        foreach ($out as $sev => $tasks) {
+          $out[$sev] = array_mergev($tasks);
         }
         $data = $out;
 
@@ -752,7 +829,8 @@ final class ManiphestTaskListController extends ManiphestController {
     $request  = $this->getRequest();
     $user     = $request->getUser();
 
-    $status   = $this->getStatusValueFromRequest();
+    $taskType = $this->getTaskTypeValueFromRequest();
+	$status   = $this->getStatusValueFromRequest();
     $group    = $this->getGroupValueFromRequest();
     $order    = $this->getOrderValueFromRequest();
 
@@ -803,6 +881,9 @@ final class ManiphestTaskListController extends ManiphestController {
     $low_priority   = $request->getInt('lpriority');
     $high_priority  = $request->getInt('hpriority');
 
+    $low_severity   = $request->getInt('lseverity');
+    $high_severity  = $request->getInt('hseverity');
+	
     $page = $request->getInt('offset');
     $page_size = self::DEFAULT_PAGE_SIZE;
 
@@ -822,11 +903,14 @@ final class ManiphestTaskListController extends ManiphestController {
         'taskIDs'             => $task_ids,
         'lowPriority'         => $low_priority,
         'highPriority'        => $high_priority,
+        'lowSeverity'         => $low_severity,
+        'highSeverity'        => $high_severity,
         'group'               => $group,
         'order'               => $order,
         'offset'              => $page,
         'limit'               => $page_size,
         'status'              => $status,
+        'type'                => $taskType,
       ));
 
     $unguarded = AphrontWriteGuard::beginScopedUnguardedWrites();
@@ -844,6 +928,12 @@ final class ManiphestTaskListController extends ManiphestController {
   the query).
 
 */
+
+  private function getTaskTypeValueFromRequest() {
+    $map = $this->getTaskTypeMap();
+    $val = $this->getRequest()->getStr($this->getTaskTypeRequestKey());
+    return idx($map, $val, head($map));
+  }
 
   private function getStatusValueFromRequest() {
     $map = $this->getStatusMap();
@@ -863,6 +953,10 @@ final class ManiphestTaskListController extends ManiphestController {
     return idx($map, $val, head($map));
   }
 
+  private function getTaskTypeRequestKey() {
+    return 't';
+  }
+  
   private function getStatusRequestKey() {
     return 's';
   }
@@ -875,6 +969,10 @@ final class ManiphestTaskListController extends ManiphestController {
     return 'o';
   }
 
+  private function getTaskTypeRequestValue($value) {
+    return array_search($value, $this->getTaskTypeMap());
+  }
+  
   private function getStatusRequestValue($value) {
     return array_search($value, $this->getStatusMap());
   }
@@ -887,6 +985,21 @@ final class ManiphestTaskListController extends ManiphestController {
     return array_search($value, $this->getOrderMap());
   }
 
+  private function getTaskTypeMap() {
+    return array(
+      't'   => array(
+        'task' => true,
+      ),
+      'b'   => array(
+        'bug' => true,
+      ),
+      'tb'  => array(
+        'task' => true,
+        'bug' => true,
+      ),
+    );
+  }
+  
   private function getStatusMap() {
     return array(
       'o'   => array(
@@ -899,55 +1012,92 @@ final class ManiphestTaskListController extends ManiphestController {
         'open' => true,
         'closed' => true,
       ),
+	  's' . ManiphestTaskStatus::STATUS_OPEN => ManiphestTaskQuery::STATUS_OPEN_ONLY,
+	  's' . ManiphestTaskStatus::STATUS_OPEN_IN_PROGRESS => ManiphestTaskQuery::STATUS_IN_PROGRESS,
+	  's' . ManiphestTaskStatus::STATUS_OPEN_READY_FOR_TEST => ManiphestTaskQuery::STATUS_READY_FOR_TEST,
+	  's' . ManiphestTaskStatus::STATUS_CLOSED_RESOLVED => ManiphestTaskQuery::STATUS_RESOLVED,
+	  's' . ManiphestTaskStatus::STATUS_CLOSED_WONTFIX => ManiphestTaskQuery::STATUS_WONTFIX,
+	  's' . ManiphestTaskStatus::STATUS_CLOSED_INVALID => ManiphestTaskQuery::STATUS_INVALID,
+	  's' . ManiphestTaskStatus::STATUS_CLOSED_DUPLICATE => ManiphestTaskQuery::STATUS_DUPLICATE,
+	  's' . ManiphestTaskStatus::STATUS_CLOSED_SPITE => ManiphestTaskQuery::STATUS_SPITE,
     );
   }
 
   private function getGroupMap() {
     return array(
-      'p' => 'priority',
-      'o' => 'owner',
-      's' => 'status',
-      'j' => 'project',
-      'n' => 'none',
+      'p'  => 'priority',
+      'sv' => 'severity',
+      'o'  => 'owner',
+      's'  => 'status',
+      'j'  => 'project',
+      'n'  => 'none',
     );
   }
 
   private function getOrderMap() {
     return array(
       'p' => 'priority',
+      's' => 'severity',
       'u' => 'updated',
       'c' => 'created',
       't' => 'title',
     );
   }
 
-  private function getStatusButtonMap() {
+  private function getTaskTypeButtonMap() {
     return array(
-      'o'   => pht('Open'),
+      't'   => pht('Task'),
+      'b'   => pht('Bug'),
+      'tb'  => pht('All'),
+    );
+  }
+  
+  private function getStatusButtonMap() {
+    $result = array(
+      'o'   => pht('Opened'),
       'c'   => pht('Closed'),
       'oc'  => pht('All'),
     );
+	
+	$statusMap = ManiphestTaskStatus::getTaskStatusMap();
+	
+	foreach ($statusMap as $key => $value) {
+		$result['s' . $key] = pht($value);
+	}
+	
+	return $result;
   }
 
   private function getGroupButtonMap() {
     return array(
-      'p' => pht('Priority'),
-      'o' => pht('Owner'),
-      's' => pht('Status'),
-      'j' => pht('Project'),
-      'n' => pht('None'),
+      'p'  => pht('Priority'),
+      'sv' => pht('Severity'),
+      'o'  => pht('Owner'),
+      's'  => pht('Status'),
+      'j'  => pht('Project'),
+      'n'  => pht('None'),
     );
   }
 
   private function getOrderButtonMap() {
     return array(
       'p' => pht('Priority'),
+      's' => pht('Severity'),
       'u' => pht('Updated'),
       'c' => pht('Created'),
       't' => pht('Title'),
     );
   }
 
+  public function renderTaskTypeControl($value) {
+    $request = $this->getRequest();
+    return id(new AphrontFormToggleButtonsControl())
+      ->setLabel(pht('Type'))
+      ->setValue($this->getTaskTypeRequestValue($value))
+      ->setBaseURI($request->getRequestURI(), $this->getTaskTypeRequestKey())
+      ->setButtons($this->getTaskTypeButtonMap());
+  }
+  
   public function renderStatusControl($value) {
     $request = $this->getRequest();
     return id(new AphrontFormToggleButtonsControl())
