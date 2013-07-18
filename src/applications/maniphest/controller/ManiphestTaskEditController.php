@@ -28,6 +28,7 @@ final class ManiphestTaskEditController extends ManiphestController {
     } else {
       $task = new ManiphestTask();
       $task->setPriority(ManiphestTaskPriority::getDefaultPriority());
+      $task->setPlatformSeverity(ManiphestTaskSeverity::getDefaultSeverity());
       $task->setAuthorPHID($user->getPHID());
 
       // These allow task creation with defaults.
@@ -90,6 +91,7 @@ final class ManiphestTaskEditController extends ManiphestController {
     if ($request->isFormPost()) {
       $changes = array();
 
+      $new_type = $request->getStr('type');
       $new_title = $request->getStr('title');
       $new_desc = $request->getStr('description');
       $new_status = $request->getStr('status');
@@ -97,6 +99,9 @@ final class ManiphestTaskEditController extends ManiphestController {
       $workflow = '';
 
       if ($task->getID()) {
+		if ($new_type != $task->getTaskType()) {
+          $changes[ManiphestTransactionType::TYPE_TASK_TYPE] = $new_type;
+        }
         if ($new_title != $task->getTitle()) {
           $changes[ManiphestTransactionType::TYPE_TITLE] = $new_title;
         }
@@ -107,6 +112,7 @@ final class ManiphestTaskEditController extends ManiphestController {
           $changes[ManiphestTransactionType::TYPE_STATUS] = $new_status;
         }
       } else {
+        $task->setTaskType($new_type);
         $task->setTitle($new_title);
         $task->setDescription($new_desc);
         $changes[ManiphestTransactionType::TYPE_STATUS] =
@@ -148,6 +154,7 @@ final class ManiphestTaskEditController extends ManiphestController {
 
       if ($errors) {
         $task->setPriority($request->getInt('priority'));
+        $task->setSeverity($request->getInt('severity'));
         $task->setOwnerPHID($owner_phid);
         $task->setCCPHIDs($request->getArr('cc'));
         $task->setProjectPHIDs($request->getArr('projects'));
@@ -157,6 +164,11 @@ final class ManiphestTaskEditController extends ManiphestController {
             $request->getInt('priority');
         }
 
+        if ($request->getInt('severity') != $task->getSeverity()) {
+          $changes[ManiphestTransactionType::TYPE_SEVERITY] =
+            $request->getInt('severity');
+        }
+		
         if ($owner_phid != $task->getOwnerPHID()) {
           $changes[ManiphestTransactionType::TYPE_OWNER] = $owner_phid;
         }
@@ -289,6 +301,7 @@ final class ManiphestTaskEditController extends ManiphestController {
             $task->setProjectPHIDs($template_task->getProjectPHIDs());
             $task->setOwnerPHID($template_task->getOwnerPHID());
             $task->setPriority($template_task->getPriority());
+            $task->setSeverity($template_task->getSeverity());
 
             if ($aux_fields) {
               $template_task->loadAndAttachAuxiliaryAttributes();
@@ -336,6 +349,7 @@ final class ManiphestTaskEditController extends ManiphestController {
     }
 
     $priority_map = ManiphestTaskPriority::getTaskPriorityMap();
+    $severity_map = ManiphestTaskSeverity::getTaskSeverityMap();
 
     if ($task->getOwnerPHID()) {
       $assigned_value = array(
@@ -399,6 +413,14 @@ final class ManiphestTaskEditController extends ManiphestController {
         ->addHiddenInput('parent', $parent_task->getID());
     }
 
+	$form
+	  ->appendChild(
+          id(new AphrontFormSelectControl())
+            ->setLabel(pht('Type'))
+            ->setName('type')
+            ->setValue($task->getTaskType())
+            ->setOptions(ManiphestTaskType::getTaskTypeMap()));
+	
     $form
       ->appendChild(
         id(new AphrontFormTextAreaControl())
@@ -443,6 +465,12 @@ final class ManiphestTaskEditController extends ManiphestController {
           ->setName('priority')
           ->setOptions($priority_map)
           ->setValue($task->getPriority()))
+      ->appendChild(
+        id(new AphrontFormSelectControl())
+          ->setLabel(pht('Severity'))
+          ->setName('severity')
+          ->setOptions($severity_map)
+          ->setValue($task->getSeverity()))
       ->appendChild(
         id(new AphrontFormTokenizerControl())
           ->setLabel(pht('Projects'))

@@ -43,6 +43,9 @@ final class ManiphestTransactionEditor extends PhabricatorEditor {
         case ManiphestTransactionType::TYPE_STATUS:
           $old = $task->getStatus();
           break;
+        case ManiphestTransactionType::TYPE_TASK_TYPE:
+          $old = $task->getTaskType();
+          break;
         case ManiphestTransactionType::TYPE_OWNER:
           $old = $task->getOwnerPHID();
           break;
@@ -52,6 +55,9 @@ final class ManiphestTransactionEditor extends PhabricatorEditor {
           break;
         case ManiphestTransactionType::TYPE_PRIORITY:
           $old = $task->getPriority();
+          break;
+        case ManiphestTransactionType::TYPE_SEVERITY:
+          $old = $task->getSeverity();
           break;
         case ManiphestTransactionType::TYPE_EDGE:
           $old = $transaction->getOldValue();
@@ -124,6 +130,9 @@ final class ManiphestTransactionEditor extends PhabricatorEditor {
         switch ($type) {
           case ManiphestTransactionType::TYPE_NONE:
             break;
+          case ManiphestTransactionType::TYPE_TASK_TYPE:
+            $task->setTaskType($new);
+            break;
           case ManiphestTransactionType::TYPE_STATUS:
             $task->setStatus($new);
             break;
@@ -144,6 +153,9 @@ final class ManiphestTransactionEditor extends PhabricatorEditor {
           case ManiphestTransactionType::TYPE_PRIORITY:
             $task->setPriority($new);
             $pri_changed = true;
+            break;
+          case ManiphestTransactionType::TYPE_SEVERITY:
+            $task->setSeverity($new);
             break;
           case ManiphestTransactionType::TYPE_ATTACH:
             $task->setAttached($new);
@@ -310,7 +322,12 @@ final class ManiphestTransactionEditor extends PhabricatorEditor {
           $actions[] = ManiphestAction::ACTION_ASSIGN;
           break;
         case ManiphestTransactionType::TYPE_STATUS:
-          if ($task->getStatus() != ManiphestTaskStatus::STATUS_OPEN) {
+		  $taskStatus = $task->getStatus();
+          if ($taskStatus == ManiphestTaskStatus::STATUS_OPEN_IN_PROGRESS) {
+            $actions[] = ManiphestAction::ACTION_START_WORK;
+		  } else if ($taskStatus == ManiphestTaskStatus::STATUS_OPEN_READY_FOR_TEST) {
+            $actions[] = ManiphestAction::ACTION_FINISH_WORK;
+		  } else if ($task->getStatus() != ManiphestTaskStatus::STATUS_OPEN) {
             $actions[] = ManiphestAction::ACTION_CLOSE;
           } else if ($this->isCreate($transactions)) {
             $actions[] = ManiphestAction::ACTION_CREATE;
@@ -398,6 +415,9 @@ final class ManiphestTransactionEditor extends PhabricatorEditor {
           break;
         case ManiphestTransactionType::TYPE_PRIORITY:
           $tags[] = MetaMTANotificationType::TYPE_MANIPHEST_PRIORITY;
+          break;
+        case ManiphestTransactionType::TYPE_SEVERITY:
+          $tags[] = MetaMTANotificationType::TYPE_MANIPHEST_SEVERITY;
           break;
         case ManiphestTransactionType::TYPE_NONE:
           // this is a comment which we will check separately below for

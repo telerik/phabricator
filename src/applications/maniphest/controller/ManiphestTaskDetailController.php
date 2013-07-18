@@ -454,6 +454,10 @@ final class ManiphestTaskDetailController extends ManiphestController {
       ->setObject($task);
 
     $view->addProperty(
+      pht('Type'),
+      ManiphestTaskType::getTaskTypeName($task->getTaskType()));
+	  
+    $view->addProperty(
       pht('Assigned To'),
       $task->getOwnerPHID()
         ? $this->getHandle($task->getOwnerPHID())->renderLink()
@@ -463,6 +467,10 @@ final class ManiphestTaskDetailController extends ManiphestController {
       pht('Priority'),
       ManiphestTaskPriority::getTaskPriorityName($task->getPriority()));
 
+	$view->addProperty(
+	  pht('Severity'),
+	  ManiphestTaskSeverity::getTaskSeverityName($task->getSeverity()));
+	  
     $view->addProperty(
       pht('Subscribers'),
       $task->getCCPHIDs()
