@@ -28,7 +28,7 @@ final class ManiphestTaskEditController extends ManiphestController {
     } else {
       $task = new ManiphestTask();
       $task->setPriority(ManiphestTaskPriority::getDefaultPriority());
-      $task->setPlatformSeverity(ManiphestTaskSeverity::getDefaultSeverity());
+      $task->setSeverity(ManiphestTaskSeverity::getDefaultSeverity());
       $task->setAuthorPHID($user->getPHID());
 
       // These allow task creation with defaults.
