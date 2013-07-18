@@ -7,6 +7,7 @@ final class PhabricatorTagView extends AphrontView {
   const TYPE_STATE          = 'state';
 
   const COLOR_RED           = 'red';
+  const COLOR_REDORANGE     = 'redorange';
   const COLOR_ORANGE        = 'orange';
   const COLOR_YELLOW        = 'yellow';
   const COLOR_BLUE          = 'blue';
