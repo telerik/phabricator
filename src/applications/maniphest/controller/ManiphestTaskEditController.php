@@ -302,6 +302,8 @@ final class ManiphestTaskEditController extends ManiphestController {
             $task->setOwnerPHID($template_task->getOwnerPHID());
             $task->setPriority($template_task->getPriority());
             $task->setSeverity($template_task->getSeverity());
+            $task->setVersion($template_task->getVersion());
+            $task->setFunctionality($template_task->getFunctionality());
 
             if ($aux_fields) {
               $template_task->loadAndAttachAuxiliaryAttributes();
@@ -486,7 +488,17 @@ final class ManiphestTaskEditController extends ManiphestController {
                 'sigil'       => 'project-create',
               ),
               pht('Create New Project')))
-          ->setDatasource('/typeahead/common/projects/'));
+          ->setDatasource('/typeahead/common/projects/'))
+      ->appendChild(
+        id(new AphrontFormTextControl())
+          ->setName('version')
+          ->setLabel(pht('Version'))
+          ->setValue($task->getVersion()))
+      ->appendChild(
+        id(new AphrontFormTextControl())
+          ->setName('functionality')
+          ->setLabel(pht('Functionality'))
+          ->setValue($task->getFunctionality()));
 
     foreach ($aux_fields as $aux_field) {
       if ($aux_field->isRequired() &&
