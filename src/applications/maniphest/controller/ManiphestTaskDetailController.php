@@ -248,7 +248,7 @@ final class ManiphestTaskDetailController extends ManiphestController {
         id(new AphrontFormTextControl())
           ->setName('version')
           ->setLabel(pht('Version'))
-          ->setValue($task->getVersion()));
+          ->setValue($task->getVersion()))
       ->appendChild(
         id(new AphrontFormFileControl())
           ->setLabel(pht('File'))
