@@ -245,11 +245,6 @@ final class ManiphestTaskDetailController extends ManiphestController {
           ->setID('projects-tokenizer')
           ->setDisableBehavior(true))
       ->appendChild(
-        id(new AphrontFormTextControl())
-          ->setName('version')
-          ->setLabel(pht('Version'))
-          ->setValue($task->getVersion()))
-      ->appendChild(
         id(new AphrontFormFileControl())
           ->setLabel(pht('File'))
           ->setName('file')
@@ -505,6 +500,9 @@ final class ManiphestTaskDetailController extends ManiphestController {
         ? $this->renderHandlesForPHIDs($task->getProjectPHIDs(), ',')
         : phutil_tag('em', array(), pht('None')));
 
+    $view->addProperty(pht('Version'), $task->getVersion());
+    $view->addProperty(pht('Functionality'), $task->getFunctionality());
+		
     foreach ($aux_fields as $aux_field) {
       $value = $aux_field->renderForDetailView();
       if (strlen($value)) {
