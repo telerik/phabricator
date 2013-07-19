@@ -609,6 +609,8 @@ final class ManiphestTaskListController extends ManiphestController {
         break;
     }
 
+    $query->withVersion($version);
+    $query->withFunctionality($functionality);
     $query->withFullTextSearch($search_text);
 
     $order_map = array(
