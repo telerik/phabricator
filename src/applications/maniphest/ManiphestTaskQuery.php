@@ -470,7 +470,7 @@ final class ManiphestTaskQuery extends PhabricatorQuery {
   }
   
   private function buildFunctionalityWhereClause(AphrontDatabaseConnection $conn) {
-    if (isempty($this->functionality) {
+    if ($this->functionality) {
       return qsprintf($conn, "functionality like '%s%%'", $this->functionality);
     }
 
