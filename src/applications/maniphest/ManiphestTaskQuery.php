@@ -461,19 +461,21 @@ final class ManiphestTaskQuery extends PhabricatorQuery {
   }
   
   private function buildVersionWhereClause(AphrontDatabaseConnection $conn) {
-    if (isempty($this->version)) {
-      return null;
+    if ($this->version)) {
+      return qsprintf($conn, "version like '%s%%'", $this->version);
     }
 
-    return qsprintf($conn, "version like '%s%%'", $this->version);
+    return null;
+
   }
   
   private function buildFunctionalityWhereClause(AphrontDatabaseConnection $conn) {
     if (isempty($this->functionality)) {
-      return null;
+      return qsprintf($conn, "functionality like '%s%%'", $this->functionality);
     }
 
-    return qsprintf($conn, "functionality like '%s%%'", $this->functionality);
+    return null;
+	
   }
   
   private function buildAuthorWhereClause(AphrontDatabaseConnection $conn) {
