@@ -22,6 +22,8 @@ final class ManiphestTask extends ManiphestDAO
   protected $subpriority;
   protected $taskType;
   protected $severity;
+  protected $version;
+  protected $functionality;
 
   protected $title;
   protected $originalTitle;

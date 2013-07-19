@@ -245,6 +245,11 @@ final class ManiphestTaskDetailController extends ManiphestController {
           ->setID('projects-tokenizer')
           ->setDisableBehavior(true))
       ->appendChild(
+        id(new AphrontFormTextControl())
+          ->setName('version')
+          ->setLabel(pht('Version'))
+          ->setValue($task->getVersion()));
+      ->appendChild(
         id(new AphrontFormFileControl())
           ->setLabel(pht('File'))
           ->setName('file')
