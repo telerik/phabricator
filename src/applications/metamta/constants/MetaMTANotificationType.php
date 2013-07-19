@@ -15,6 +15,8 @@ final class MetaMTANotificationType
   const TYPE_MANIPHEST_OWNER          = 'maniphest-owner';
   const TYPE_MANIPHEST_PRIORITY       = 'maniphest-priority';
   const TYPE_MANIPHEST_SEVERITY       = 'maniphest-severity';
+  const TYPE_MANIPHEST_VERSION        = 'maniphest-version';
+  const TYPE_MANIPHEST_FUNCTIONALITY  = 'maniphest-functionality';
   const TYPE_MANIPHEST_CC             = 'maniphest-cc';
   const TYPE_MANIPHEST_PROJECTS       = 'maniphest-projects';
   const TYPE_MANIPHEST_COMMENT        = 'maniphest-comment';

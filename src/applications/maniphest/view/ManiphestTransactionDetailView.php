@@ -500,6 +500,14 @@ final class ManiphestTransactionDetailView extends ManiphestView {
                   '"'.$new_name.'"';
         }
 		break;
+      case ManiphestTransactionType::TYPE_VERSION:
+        $verb = 'VersionChanged';
+        $desc = 'changed the version from '.$this->renderString($old). ' to '.$this->renderString($new);
+        break;
+      case ManiphestTransactionType::TYPE_FUNCTIONALITY:
+        $verb = 'FunctionalityChanged';
+        $desc = 'changed the functionality from '.$this->renderString($old). ' to '.$this->renderString($new);
+        break;
       case ManiphestTransactionType::TYPE_ATTACH:
         if ($this->preview) {
           $verb = 'Changed Attached';

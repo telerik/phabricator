@@ -59,6 +59,12 @@ final class ManiphestTransactionEditor extends PhabricatorEditor {
         case ManiphestTransactionType::TYPE_SEVERITY:
           $old = $task->getSeverity();
           break;
+        case ManiphestTransactionType::TYPE_VERSION:
+          $old = $task->getVersion();
+          break;
+        case ManiphestTransactionType::TYPE_FUNCTIONALITY:
+          $old = $task->getFunctionality();
+          break;
         case ManiphestTransactionType::TYPE_EDGE:
           $old = $transaction->getOldValue();
           break;
@@ -156,6 +162,12 @@ final class ManiphestTransactionEditor extends PhabricatorEditor {
             break;
           case ManiphestTransactionType::TYPE_SEVERITY:
             $task->setSeverity($new);
+            break;
+          case ManiphestTransactionType::TYPE_VERSION:
+            $task->setVersion($new);
+            break;
+          case ManiphestTransactionType::TYPE_FUNCTIONALITY:
+            $task->setFunctionality($new);
             break;
           case ManiphestTransactionType::TYPE_ATTACH:
             $task->setAttached($new);
@@ -418,6 +430,12 @@ final class ManiphestTransactionEditor extends PhabricatorEditor {
           break;
         case ManiphestTransactionType::TYPE_SEVERITY:
           $tags[] = MetaMTANotificationType::TYPE_MANIPHEST_SEVERITY;
+          break;
+        case ManiphestTransactionType::TYPE_VERSION:
+          $tags[] = MetaMTANotificationType::TYPE_MANIPHEST_VERSION;
+          break;
+        case ManiphestTransactionType::TYPE_FUNCTIONALITY:
+          $tags[] = MetaMTANotificationType::TYPE_MANIPHEST_FUNCTIONALITY;
           break;
         case ManiphestTransactionType::TYPE_NONE:
           // this is a comment which we will check separately below for

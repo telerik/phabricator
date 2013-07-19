@@ -95,6 +95,8 @@ final class ManiphestTaskEditController extends ManiphestController {
       $new_title = $request->getStr('title');
       $new_desc = $request->getStr('description');
       $new_status = $request->getStr('status');
+	  $new_version = $request->getStr('version');
+	  $new_functionality = $request->getStr('functionality');
 
       $workflow = '';
 
@@ -111,12 +113,20 @@ final class ManiphestTaskEditController extends ManiphestController {
         if ($new_status != $task->getStatus()) {
           $changes[ManiphestTransactionType::TYPE_STATUS] = $new_status;
         }
+        if ($new_version != $task->getVersion()) {
+          $changes[ManiphestTransactionType::TYPE_VERSION] = $new_version;
+        }
+        if ($new_functionality != $task->getFunctionality()) {
+          $changes[ManiphestTransactionType::TYPE_FUNCTIONALITY] = $new_functionality;
+        }
       } else {
         $task->setTaskType($new_type);
         $task->setTitle($new_title);
         $task->setDescription($new_desc);
         $changes[ManiphestTransactionType::TYPE_STATUS] =
           ManiphestTaskStatus::STATUS_OPEN;
+        $task->setVersion($new_version);
+        $task->setFunctionality($new_functionality);
 
         $workflow = 'create';
       }
