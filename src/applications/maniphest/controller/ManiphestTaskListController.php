@@ -73,7 +73,7 @@ final class ManiphestTaskListController extends ManiphestController {
     $key = $request->getStr('key');
     if (!$key && !$this->view) {
       if ($this->getDefaultQuery()) {
-        $key = $this->getDefaultQuery()->getQueryKey();
+        $key = $this->$query()->getQueryKey();
       }
     }
 
@@ -932,7 +932,7 @@ final class ManiphestTaskListController extends ManiphestController {
   private function getTaskTypeValueFromRequest() {
     $map = $this->getTaskTypeMap();
     $val = $this->getRequest()->getStr($this->getTaskTypeRequestKey());
-    return idx($map, $val, head($map));
+    return idx($map, $val, $map['tb']);
   }
 
   private function getStatusValueFromRequest() {
