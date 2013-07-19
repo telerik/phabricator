@@ -40,6 +40,10 @@ final class ManiphestTaskListController extends ManiphestController {
 
       $max_severity = $request->getInt('set_hseverity');
 
+      $version = $request->getStr('set_version');
+	  
+      $functionality = $request->getStr('set_functionality');
+	  
       $uri = $request->getRequestURI()
         ->alter('users',         $this->getArrToStrList('set_users'))
         ->alter('projects',      $this->getArrToStrList('set_projects'))
@@ -53,7 +57,9 @@ final class ManiphestTaskListController extends ManiphestController {
         ->alter('lseverity',     $min_severity)
         ->alter('hseverity',     $max_severity)
         ->alter('tasks',         $task_ids)
-        ->alter('search',        $search_text);
+        ->alter('search',        $search_text)
+        ->alter('version',       $version)
+        ->alter('functionality', $functionality);
 
       return id(new AphrontRedirectResponse())->setURI($uri);
     }
@@ -122,6 +128,8 @@ final class ManiphestTaskListController extends ManiphestController {
     $high_priority  = $query->getParameter('highPriority');
     $low_severity   = $query->getParameter('lowSeverity');
     $high_severity  = $query->getParameter('highSeverity');
+    $version  = $query->getParameter('version');
+    $functionality  = $query->getParameter('functionality');
 
     $page_size = $query->getParameter('limit');
     $page = $query->getParameter('offset');
@@ -305,6 +313,19 @@ final class ManiphestTaskListController extends ManiphestController {
             ->setName('set_hseverity')
             ->setValue($severity)
             ->setOptions(ManiphestTaskSeverity::getTaskSeverityMap()));
+			
+      $form->appendChild(
+        id(new AphrontFormTextControl())
+          ->setName('set_version')
+          ->setLabel(pht('Version'))
+          ->setValue($version));
+			
+      $form->appendChild(
+        id(new AphrontFormTextControl())
+          ->setName('set_functionality')
+          ->setLabel(pht('Functionality'))
+          ->setValue($functionality));
+			
     }
 
     $form
