@@ -1091,6 +1091,7 @@ final class ManiphestTaskListController extends ManiphestController {
 
   public function renderTaskTypeControl($value) {
     $request = $this->getRequest();
+    phlog('renderTaskTypeControl: ' . $value);
     return id(new AphrontFormToggleButtonsControl())
       ->setLabel(pht('Type'))
       ->setValue($this->getTaskTypeRequestValue($value))
