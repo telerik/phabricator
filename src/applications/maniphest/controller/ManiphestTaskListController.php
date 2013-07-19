@@ -524,6 +524,9 @@ final class ManiphestTaskListController extends ManiphestController {
     $high_severity = $search_query->getParameter('highSeverity');
     $high_severity = coalesce($high_severity,
       ManiphestTaskSeverity::getHighestSeverity());
+
+    $version = $search_query->getParameter('version');
+    $functionality = $search_query->getParameter('functionality');
 	  
     $query = new ManiphestTaskQuery();
     $query->withTaskIDs($task_ids);
@@ -904,6 +907,9 @@ final class ManiphestTaskListController extends ManiphestController {
 
     $low_severity   = $request->getInt('lseverity');
     $high_severity  = $request->getInt('hseverity');
+
+    $version  = $request->getStr('version');
+    $functionality  = $request->getStr('functionality');
 	
     $page = $request->getInt('offset');
     $page_size = self::DEFAULT_PAGE_SIZE;
@@ -932,6 +938,8 @@ final class ManiphestTaskListController extends ManiphestController {
         'limit'               => $page_size,
         'status'              => $status,
         'type'                => $taskType,
+        'version'             => $version,
+        'functionality'       => $functionality,
       ));
 
     $unguarded = AphrontWriteGuard::beginScopedUnguardedWrites();

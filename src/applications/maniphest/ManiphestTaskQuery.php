@@ -50,6 +50,9 @@ final class ManiphestTaskQuery extends PhabricatorQuery {
   private $minSeverity      = null;
   private $maxSeverity      = null;
   
+  private $version          = '';
+  private $functionality    = '';
+  
   private $groupBy          = 'group-none';
   const GROUP_NONE          = 'group-none';
   const GROUP_PRIORITY      = 'group-priority';
@@ -162,6 +165,15 @@ final class ManiphestTaskQuery extends PhabricatorQuery {
     return $this;
   }
   
+  public function withVersion($version) {
+    $this->version = $version;
+    return $this;
+  }
+
+  public function withFunctionality($functionality) {
+    $this->functionality = $functionality;
+    return $this;
+  }
 
   public function withSubscribers(array $subscribers) {
     $this->subscriberPHIDs = $subscribers;
@@ -246,6 +258,8 @@ final class ManiphestTaskQuery extends PhabricatorQuery {
     $where[] = $this->buildAnyProjectWhereClause($conn);
     $where[] = $this->buildAnyUserProjectWhereClause($conn);
     $where[] = $this->buildXProjectWhereClause($conn);
+	$where[] = $this->buildVersionWhereClause($conn);
+	$where[] = $this->buildFunctionalityWhereClause($conn);
     $where[] = $this->buildFullTextWhereClause($conn);
 
     $where = $this->formatWhereClause($where);
@@ -444,6 +458,22 @@ final class ManiphestTaskQuery extends PhabricatorQuery {
     }
 
     return null;
+  }
+  
+  private function buildVersionWhereClause(AphrontDatabaseConnection $conn) {
+    if (isempty($this->version)) {
+      return null;
+    }
+
+    return qsprintf($conn, "version like '%s%%'", $this->version);
+  }
+  
+  private function buildFunctionalityWhereClause(AphrontDatabaseConnection $conn) {
+    if (isempty($this->functionality)) {
+      return null;
+    }
+
+    return qsprintf($conn, "functionality like '%s%%'", $this->functionality);
   }
   
   private function buildAuthorWhereClause(AphrontDatabaseConnection $conn) {
