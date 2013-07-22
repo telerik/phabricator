@@ -47,7 +47,7 @@ final class ManiphestTaskStatus extends ManiphestConstants {
     $map = array(
       self::STATUS_OPEN                 => PhabricatorTagView::COLOR_ORANGE,
 	  self::STATUS_OPEN_IN_PROGRESS     => PhabricatorTagView::COLOR_GREEN,
-      self::STATUS_OPEN_READY_FOR_TEST  => PhabricatorTagView::COLOR_REDORANGE,
+      self::STATUS_OPEN_READY_FOR_TEST  => PhabricatorTagView::COLOR_VIOLET,
       self::STATUS_CLOSED_RESOLVED      => PhabricatorTagView::COLOR_BLUE,
       self::STATUS_CLOSED_WONTFIX       => PhabricatorTagView::COLOR_BLACK,
       self::STATUS_CLOSED_INVALID       => PhabricatorTagView::COLOR_BLACK,
