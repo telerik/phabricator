@@ -263,6 +263,7 @@ final class ManiphestTaskQuery extends PhabricatorQuery {
     $where[] = $this->buildFullTextWhereClause($conn);
 
     $where = $this->formatWhereClause($where);
+	phlog('where: ' . $where);
 
     $join = array();
     $join[] = $this->buildProjectJoinClause($conn);
