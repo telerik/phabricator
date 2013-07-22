@@ -463,7 +463,7 @@ final class ManiphestTaskQuery extends PhabricatorQuery {
   
   private function buildVersionWhereClause(AphrontDatabaseConnection $conn) {
     if ($this->version) {
-      return qsprintf($conn, "version like \'%s%%\'", $this->version);
+      return qsprintf($conn, 'version LIKE %>', $this->version);
     }
 
     return null;
@@ -472,7 +472,7 @@ final class ManiphestTaskQuery extends PhabricatorQuery {
   
   private function buildFunctionalityWhereClause(AphrontDatabaseConnection $conn) {
     if ($this->functionality) {
-      return qsprintf($conn, "functionality like \'%s%%\'", $this->functionality);
+      return qsprintf($conn, 'functionality LIKE %>', $this->functionality);
     }
 
     return null;
